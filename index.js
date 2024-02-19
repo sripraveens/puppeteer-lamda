@@ -1,5 +1,6 @@
 const chromium = require("chrome-aws-lambda");
 const AWS = require("aws-sdk");
+require("dotenv").config();
 AWS.config.update({ region: "ap-southeast-1" });
 
 const s3 = new AWS.S3();
@@ -19,11 +20,6 @@ exports.handler = async (event, context, callback) => {
     });
 
     let page = await browser.newPage();
-    // const delayInMilliseconds = 15000;
-
-    // setTimeout(function () {
-    //   console.log("Delay is over!");
-    // }, delayInMilliseconds);
     await page.goto(event.url || "https://blueprintcoc.com", {
       waitUntil: "networkidle2",
     });
@@ -36,7 +32,7 @@ exports.handler = async (event, context, callback) => {
 
     const buffer = await page.screenshot();
     const params = {
-      Bucket: "take-screeshots-cp",
+      Bucket: `${process.env.S3BUCKET}`,
       Key: `${Date.now()}.png`,
       Body: buffer,
       ContentType: "image/png",
@@ -44,7 +40,7 @@ exports.handler = async (event, context, callback) => {
     };
 
     result = await s3.putObject(params).promise();
-    url = `https://take-screeshots-cp.s3.ap-southeast-1.amazonaws.com/${params.Key}`;
+    url = `${process.env.S3URL}${params.Key}`;
   } catch (error) {
     return callback(error);
   } finally {
